@@ -1,6 +1,7 @@
 package main
 
 import (
+    // Standard Packages
     "os"
     "fmt"
     "log"
@@ -10,6 +11,8 @@ import (
     // External Packages
     "github.com/rs/cors"
     "github.com/gorilla/mux"
+
+    // Project Packages
 )
 
 func main() {
@@ -34,7 +37,9 @@ func main() {
     router := mux.NewRouter()
 
     // Endpoints and their handlers
-    router.HandleFunc("/", isUp).Methods("GET")
+    isUpEndpoint := "/"
+
+    router.HandleFunc(isUpEndpoint, isUp).Methods("GET")
 
     // CORS setting to allow Cross-Origin Requests
     handler := cors.Default().Handler(router)
