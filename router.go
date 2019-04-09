@@ -13,6 +13,11 @@ import (
     "github.com/gorilla/mux"
 
     // Project Packages
+    "telegramBot"
+)
+
+var (
+    domain = "https://secretsanta5000.herokuapp.com/"
 )
 
 func main() {
@@ -27,7 +32,7 @@ func main() {
     repeatStr := os.Getenv("REPEAT")
     repeat, err := strconv.Atoi(repeatStr)
     if err != nil {
-        log.Print("Error converting $REPEAT to an int: %q - Using default", err)
+        log.Print("Error converting $REPEAT to an int: ", err)
         repeat = 5
     }
 
@@ -36,13 +41,23 @@ func main() {
     // Create the router
     router := mux.NewRouter()
 
-    // Endpoints and their handlers
+    // Endpoints
     isUpEndpoint := "/"
+    telegramEndpoint := "/telegram/"
 
+    // Handlers for endpoints
     router.HandleFunc(isUpEndpoint, isUp).Methods("GET")
+    router.HandleFunc(telegramEndpoint + "/{token}/", telegramBot.HandleUpdate).Methods("POST")
 
     // CORS setting to allow Cross-Origin Requests
     handler := cors.Default().Handler(router)
+
+    // Set the bot's webhook to it's endpoint
+    success := telegramBot.SetWebhook(domain + telegramEndpoint)
+    if !success {
+        log.Fatal("Could not set telegram webhook")
+    }
+    log.Println("Telegram webhook set")
 
     // Start router listening and serving
     log.Fatal(http.ListenAndServe(":" + port, handler))
