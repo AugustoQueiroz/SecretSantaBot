@@ -2,7 +2,6 @@ package main
 
 import (
     // Standard Packages
-    "log"
     "time"
     "strings"
     "strconv"
