@@ -113,6 +113,13 @@ func SantaPairing(santaType string, chat *telegramBot.Chat, usersParticipating [
         }
     }
 
+    SharePairings(santaType, chat, usersParticipating, pairs)
+}
+
+func SharePairings(santaType string, chat *telegramBot.Chat, usersParticipating []telegramBot.User, pairs []telegramBot.User) {
+    messageBody := "The secret santas have been picked..."
+    telegramBot.SendMarkdownMessage(messageBody, chat.Id)
+
     if santaType == "open" {
         OpenSharing(chat, usersParticipating, pairs)
     } else if santaType == "secret" {

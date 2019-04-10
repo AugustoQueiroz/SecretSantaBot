@@ -8,6 +8,7 @@ import (
 func main() {
     telegramBot.HandleFunc("/start", StartHandler)
     telegramBot.HandleFunc("/createopensanta", OpenSantaHandler)
+    telegramBot.HandleFunc("/createsecretsanta", SecretSantaHandler)
 
     telegramBot.CallbackHandler = CallbackHandler
 

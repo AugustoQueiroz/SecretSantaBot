@@ -91,6 +91,35 @@ func OpenSantaHandler(message *telegramBot.Message) {
     }()
 }
 
+func SecretSantaHandler(message *telegramBot.Message) {
+    if !GuardMessageBelongsToGroup(message) { return } // Guarantee that the message was received in a group, or deal with it otherwise
+
+    // If the message was, indeed, received in a group, hanlde it
+
+    // First, check if there isn't a secret santa already accepting participants here
+    _, exists := activeSantas[message.Id]
+    if exists {
+        // Say there is already a santa going on and then quit
+        return
+    }
+
+    // Then send a messsage with the possible actions
+    replyBody := "A *Secret Santa* was created by *" + message.From.FirstName + "*.\n" +
+                 "To participate in it, press 'Participate' below.\n" +
+                 "When everyone has joined, press 'Close' to create the pairings, which will be sent here."
+
+    NewSantaMessage(replyBody, message.Origin.Id, message.Id)
+    participantsMessage := telegramBot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
+
+    // Then create the active santa
+    activeSantas[message.Id] = &SantaInfo { "secret", *participantsMessage.Origin, participantsMessage.Id, []telegramBot.User{} }
+    timer := time.NewTimer(60*time.Second)
+    go func() {
+        <-timer.C
+        SantaDone(message.Id)
+    }()
+}
+
 func CallbackHandler(callback *telegramBot.CallbackQuery) {
     if callback == nil { return }
     if strings.HasPrefix(callback.Data, "done:") {
