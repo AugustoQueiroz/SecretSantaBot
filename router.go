@@ -20,6 +20,8 @@ func router() {
         log.Fatal("$PORT must be set!")
     }
 
+    log.Println("Binding to ", port)
+
     repeatStr := os.Getenv("REPEAT")
     repeat, err := strconv.Atoi(repeatStr)
     if err != nil {

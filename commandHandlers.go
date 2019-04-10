@@ -12,7 +12,6 @@ import (
 )
 
 func StartHandler(message *telegramBot.Message) {
-    log.Println("Here")
     if len(message.Body) <= len("/start") {
         return
     }
@@ -45,7 +44,6 @@ func NewSantaMessage(body string, chatId int, messageId int) {
     var participateButton telegramBot.InlineKeyboardButton
     participateButton.Label = "Participate"
     participateButton.URL = "http://t.me/secretsantainatorbot?start=" + strconv.Itoa(messageId)
-    log.Println(participateButton.URL)
 
     var closeButton telegramBot.InlineKeyboardButton
     closeButton.Label = "Done"
@@ -61,7 +59,6 @@ func NewSantaMessage(body string, chatId int, messageId int) {
 }
 
 func OpenSantaHandler(message *telegramBot.Message) {
-    log.Println("Create open santa command received")
     if !GuardMessageBelongsToGroup(message) { return } // Guarantee that the message was received in a group, or deal with it otherwise
 
     // If the message was, indeed, received in a group, handle it
@@ -80,7 +77,6 @@ func OpenSantaHandler(message *telegramBot.Message) {
 
     NewSantaMessage(replyBody, message.Origin.Id, message.Id)
     participantsMessage := telegramBot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
-    log.Println("now here ... ", participantsMessage)
 
     // If one does not exist, create the go routine and channel
     activeSantas[message.Id] = &SantaInfo { "open", *participantsMessage.Origin, participantsMessage.Id, []telegramBot.User{} }
