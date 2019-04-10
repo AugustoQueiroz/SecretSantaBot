@@ -8,7 +8,7 @@ import (
     "strconv"
 
     // Project Packages
-    "telegramBot"
+    "github.com/AugustoQueiroz/telegramBot"
 )
 
 func StartHandler(message *telegramBot.Message) {

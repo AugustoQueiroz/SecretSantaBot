@@ -2,7 +2,7 @@ package main
 
 import (
     "log"
-    "telegramBot"
+    "github.com/AugustoQueiroz/telegramBot"
 )
 
 func main() {

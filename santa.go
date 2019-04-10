@@ -7,7 +7,7 @@ import (
     "math/rand"
 
     // Project Packages
-    "telegramBot"
+    "github.com/AugustoQueiroz/telegramBot"
 )
 
 type JoinChannel chan *telegramBot.User

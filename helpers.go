@@ -1,7 +1,7 @@
 package main
 
 import (
-    "telegramBot"
+    "github.com/AugustoQueiroz/telegramBot"
 )
 
 func NotIn(group []telegramBot.User, user *telegramBot.User) bool {
