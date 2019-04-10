@@ -14,6 +14,9 @@ func main() {
 
     activeSantas = make(map[int]*SantaInfo)
 
+    log.Println("Creating router")
+    go router()
+
     log.Println("Starting poller")
     telegramBot.Poller()
 }
