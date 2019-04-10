@@ -1,1 +1,1 @@
-web: ./SecretSantaBot
+web: bin/SecretSantaBot
