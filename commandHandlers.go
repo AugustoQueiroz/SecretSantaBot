@@ -17,23 +17,13 @@ func StartHandler(message *telegramBot.Message) {
         return
     }
     // Going to assume that the start message was to join a secret santa
-    chatId, err := strconv.Atoi(message.Body[len("/start")+1:])
+    messageId, err := strconv.Atoi(message.Body[len("/start")+1:])
     if err != nil {
         // The text following the command was not an id, so act as if this is an unrelated command
         return
     }
 
-    joinChannel, exists := activeJoinChannels[chatId]
-    if !exists {
-        // Act as if this is an unrelated start command
-        return
-    }
-
-    joinChannel <- message.From
-
-    // Inform user they have joined the santa
-    messageBody := "You have joined a secret santa"
-    telegramBot.SendMarkdownMessage(messageBody, message.Origin.Id)
+    JoinSanta(messageId, message.From)
 }
 
 func GuardMessageBelongsToGroup(message *telegramBot.Message) bool {
@@ -48,18 +38,18 @@ func GuardMessageBelongsToGroup(message *telegramBot.Message) bool {
     return true
 }
 
-func NewSantaMessage(body string, chatId int) {
+func NewSantaMessage(body string, chatId int, messageId int) {
     // Create the inline buttons that will be displayed
     var inlineKeyboard telegramBot.InlineKeyboardMarkup
 
     var participateButton telegramBot.InlineKeyboardButton
     participateButton.Label = "Participate"
-    participateButton.URL = "http://t.me/secretsantainatorbot?start=" + strconv.Itoa(chatId)
+    participateButton.URL = "http://t.me/secretsantainatorbot?start=" + strconv.Itoa(messageId)
     log.Println(participateButton.URL)
 
     var closeButton telegramBot.InlineKeyboardButton
     closeButton.Label = "Done"
-    closeButton.CallbackData = "done:" + strconv.Itoa(chatId)
+    closeButton.CallbackData = "done:" + strconv.Itoa(messageId)
 
     inlineKeyboard.Keyboard = [][]telegramBot.InlineKeyboardButton {
         []telegramBot.InlineKeyboardButton { participateButton },
@@ -77,30 +67,32 @@ func OpenSantaHandler(message *telegramBot.Message) {
     // If the message was, indeed, received in a group, handle it
 
     // First, check if there isn't a secret santa already accepting participants here
-    _, exists := activeJoinChannels[message.Origin.Id]
+    _, exists := activeSantas[message.Id]
     if exists {
         // Say there is already a santa going on and the quit
         return
     }
-
-    // If one does not exist, create the go routine and channel
-    activeJoinChannels[message.Origin.Id] = make(JoinChannel)
-    go SantaWriteUp("open", message.Origin, activeJoinChannels[message.Origin.Id])
-    timer := time.NewTimer(60*time.Second)
-    go func() {
-        <-timer.C
-        close(activeJoinChannels[message.Origin.Id])
-    }()
 
     // Then send a message with the possible actions
     replyBody := "An *Open Santa* was created by " + message.From.FirstName + ".\n" +
                  "To participate in it, press 'Participate' below.\n" +
                  "When everyone has joined, press 'Close' to create the pairings, which will be sent here."
 
-    NewSantaMessage(replyBody, message.Origin.Id)
+    NewSantaMessage(replyBody, message.Origin.Id, message.Id)
+    participantsMessage := telegramBot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
+    log.Println("now here ... ", participantsMessage)
+
+    // If one does not exist, create the go routine and channel
+    activeSantas[message.Id] = &SantaInfo { "open", *participantsMessage.Origin, participantsMessage.Id, []telegramBot.User{} }
+    timer := time.NewTimer(60*time.Second)
+    go func() {
+        <-timer.C
+        SantaDone(message.Id)
+    }()
 }
 
 func CallbackHandler(callback *telegramBot.CallbackQuery) {
+    if callback == nil { return }
     if strings.HasPrefix(callback.Data, "done:") {
         // Done callback recieved
         chatId, err := strconv.Atoi(callback.Data[len("done:"):])
@@ -108,9 +100,11 @@ func CallbackHandler(callback *telegramBot.CallbackQuery) {
             return
         }
 
-        joinChannel, exists := activeJoinChannels[chatId]
-        if exists {
-            joinChannel <- nil
+        _, exists := activeSantas[chatId]
+        if !exists {
+            return
         }
+
+        SantaDone(chatId)
     }
 }

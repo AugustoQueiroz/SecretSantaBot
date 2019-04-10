@@ -12,8 +12,16 @@ import (
 
 type JoinChannel chan *telegramBot.User
 
+type SantaInfo struct {
+    santaType       string
+    chat            telegramBot.Chat
+    messageId       int
+    participants    []telegramBot.User
+}
+
 var (
     activeJoinChannels map[int]JoinChannel
+    activeSantas        map[int]*SantaInfo
 )
 
 // A function that receives new participants in a specific santa until the channel is closed
@@ -31,6 +39,55 @@ func SantaWriteUp(santaType string, chat *telegramBot.Chat, joinChannel JoinChan
 
         usersParticipating = append(usersParticipating, *user)
     }
+}
+
+func JoinSanta(messageId int, user *telegramBot.User) {
+    santaInfo, exists := activeSantas[messageId]
+    if !exists {
+        messageBody := "The santa you're trying to join doesn't exist. Perhaps it has expired or someone has closed it"
+        telegramBot.SendMarkdownMessage(messageBody, user.Id)
+        return
+    }
+
+    if NotIn(santaInfo.participants, user) {
+        santaInfo.participants = append(santaInfo.participants, *user)
+
+        // Message User
+        messageBody := "You have been added as a participant to an " + santaInfo.santaType + " santa"
+        telegramBot.SendMarkdownMessage(messageBody, user.Id)
+
+        // Edit message in group
+        newMessageBody := "#participants: " + strconv.Itoa(len(santaInfo.participants)) + "\n"
+        for _, participant := range santaInfo.participants {
+            newMessageBody += "[" + participant.FirstName + "](tg://user?id=" + strconv.Itoa(participant.Id) + ")\n"
+        }
+        telegramBot.EditMessageText(santaInfo.chat.Id, santaInfo.messageId, newMessageBody, "Markdown")
+    } else {
+        messageBody := "You have already been added to that " + santaInfo.santaType + " santa."
+        telegramBot.SendMarkdownMessage(messageBody, user.Id)
+    }
+}
+
+func SantaDone(messageId int) {
+    santaInfo, exists := activeSantas[messageId]
+    if !exists {
+        return
+    }
+
+    delete(activeSantas, messageId)
+
+    if len(santaInfo.participants) < 2 {
+        SantaNotEnoughParticipants(santaInfo, messageId)
+        return
+    }
+
+    SantaPairing(santaInfo.santaType, &santaInfo.chat, santaInfo.participants)
+}
+
+func SantaNotEnoughParticipants(santaInfo *SantaInfo, messageId int) {
+    messageBody := "Not enough participants"
+
+    telegramBot.SendMarkdownMessage(messageBody, santaInfo.chat.Id)
 }
 
 func SantaPairing(santaType string, chat *telegramBot.Chat, usersParticipating []telegramBot.User) {
@@ -56,20 +113,29 @@ func SantaPairing(santaType string, chat *telegramBot.Chat, usersParticipating [
         }
     }
 
-    SharePairing(santaType, chat, usersParticipating, pairs)
+    if santaType == "open" {
+        OpenSharing(chat, usersParticipating, pairs)
+    } else if santaType == "secret" {
+        SecretSharing(usersParticipating, pairs)
+    }
 }
 
-func SharePairing(santaType string, chat *telegramBot.Chat, usersParticipating []telegramBot.User, pairings []telegramBot.User) {
-    if santaType == "open" {
-        resultMessageBody := "Secret Santa Pairings:\n"
-        for i, user := range usersParticipating {
-            santa := pairings[i]
-            resultMessageBody += "[" + user.FirstName + "](tg://user?id=" + strconv.Itoa(user.Id) + "): "
-            resultMessageBody += "[" + santa.FirstName + "](tg://user?id=" + strconv.Itoa(santa.Id) + ")\n"
-        }
+func OpenSharing(chat *telegramBot.Chat, usersParticipating []telegramBot.User, pairings []telegramBot.User) {
+    messageBody := "Open Santa Pairings:\n"
+    for i, user := range usersParticipating {
+        santa := pairings[i]
+        messageBody += "[" + user.FirstName + "](tg://user?id=" + strconv.Itoa(user.Id) + ") -> "
+        messageBody += "[" + santa.FirstName + "](tg://user?id=" + strconv.Itoa(santa.Id) + ")\n"
+    }
 
-        telegramBot.SendMarkdownMessage(resultMessageBody, chat.Id)
-    } else if santaType == "secret" {
+    telegramBot.SendMarkdownMessage(messageBody, chat.Id)
+}
 
+func SecretSharing(usersParticipating []telegramBot.User, pairings []telegramBot.User) {
+    for i, user := range usersParticipating {
+        santa := pairings[i]
+
+        messageBody := "Your secret santa is [" + santa.FirstName + "](tg://user?id=" + strconv.Itoa(santa.Id) + ")"
+        telegramBot.SendMarkdownMessage(messageBody, user.Id)
     }
 }

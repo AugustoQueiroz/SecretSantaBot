@@ -1,6 +1,7 @@
 package main
 
 import (
+    "log"
     "telegramBot"
 )
 
@@ -10,7 +11,8 @@ func main() {
 
     telegramBot.CallbackHandler = CallbackHandler
 
-    activeJoinChannels = make(map[int]JoinChannel)
+    activeSantas = make(map[int]*SantaInfo)
 
+    log.Println("Starting poller")
     telegramBot.Poller()
 }
