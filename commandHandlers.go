@@ -29,7 +29,7 @@ func GuardMessageBelongsToGroup(message *telegramBot.Message) bool {
     if message.Origin.Type == "private" {
         // If the message is coming from a private conversation, inform about correct usage and leave
         replyBody := "This command is meant to be send in *groups* or *supergroups*, and not on a private conversation.\n\nTo learn more about the usage of this bot send /help"
-        telegramBot.SendMarkdownMessage(replyBody, message.Origin.Id)
+        bot.SendMarkdownMessage(replyBody, message.Origin.Id)
         return false
     }
 
@@ -54,7 +54,7 @@ func NewSantaMessage(body string, chatId int, messageId int) {
     }
 
     // Send the message
-    telegramBot.SendMessageWithKeyboard(body, chatId, "Markdown", inlineKeyboard)
+    bot.SendMessageWithKeyboard(body, chatId, "Markdown", inlineKeyboard)
 }
 
 func OpenSantaHandler(message *telegramBot.Message) {
@@ -75,7 +75,7 @@ func OpenSantaHandler(message *telegramBot.Message) {
                  "When everyone has joined, press 'Close' to create the pairings, which will be sent here."
 
     NewSantaMessage(replyBody, message.Origin.Id, message.Id)
-    participantsMessage := telegramBot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
+    participantsMessage := bot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
 
     // If one does not exist, create the go routine and channel
     activeSantas[message.Id] = &SantaInfo { "open", *participantsMessage.Origin, participantsMessage.Id, []telegramBot.User{} }
@@ -104,7 +104,7 @@ func SecretSantaHandler(message *telegramBot.Message) {
                  "When everyone has joined, press 'Close' to create the pairings, which will be sent here."
 
     NewSantaMessage(replyBody, message.Origin.Id, message.Id)
-    participantsMessage := telegramBot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
+    participantsMessage := bot.SendMarkdownMessage("#participants: 0", message.Origin.Id)
 
     // Then create the active santa
     activeSantas[message.Id] = &SantaInfo { "secret", *participantsMessage.Origin, participantsMessage.Id, []telegramBot.User{} }
